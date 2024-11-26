@@ -1,0 +1,57 @@
+version: '3.7'
+
+services:
+  myapp_web:
+    image: ykrim3/myapp:latest
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      - DB_HOST=myapp_mysql
+      - DB_USER_FILE=/run/secrets/db_user
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+      - DB_NAME_FILE=/run/secrets/db_name
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    secrets:
+      - db_user
+      - db_password
+      - db_name
+
+  myapp_mysql:
+    image: mysql:5.7
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_DATABASE_FILE: /run/secrets/db_name
+      MYSQL_USER_FILE: /run/secrets/db_user
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+    secrets:
+      - db_user
+      - db_password
+      - db_name
+
+networks:
+  app-network:
+    driver: overlay
+
+secrets:
+  db_user:
+    external: true
+  db_password:
+    external: true
+  db_name:
+    external: true
+
+volumes:
+  db_data:
+
